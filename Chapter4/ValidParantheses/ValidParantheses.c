@@ -1,5 +1,4 @@
 ﻿#include <stdio.h>
-#include <string.h>
 #include <assert.h>
 
 #define MAX_STACK_SIZE 100
@@ -35,18 +34,18 @@ char Pop(Stack* stack)
 	return stack->elements[stack->top--];
 }
 
-int CheckParanthesis(char* str, int len)
+int CheckParanthesis(char* str)
 {
 	Stack paranthesisStack = { .top = -1 };
 
-	for (int i = 0; i < len; ++i)
+	while (*str != '\0')
 	{
-		switch (*(str + i))
+		switch (*str)
 		{
 		case '[':
 		case '{':
 		case '(':
-			Push(&paranthesisStack, *(str + i));
+			Push(&paranthesisStack, *str);
 			break;
 
 		case ']':
@@ -68,6 +67,8 @@ int CheckParanthesis(char* str, int len)
 			}
 			break;
 		}
+
+		++str;
 	}
 
 	return 1;
@@ -76,10 +77,10 @@ int CheckParanthesis(char* str, int len)
 int main(void)
 {
 	char valid[] = "{arr[Func(a)-(i + j)]}";
-	char invalid[] = "}{a(i + 1)[][](}";
+	char invalid[] = "{a(i + 1)[][](}";
 
-	printf("valid: %d\n", CheckParanthesis(valid, strlen(valid))); // valid: 1
-	printf("invalid: %d\n", CheckParanthesis(invalid, strlen(invalid))); // invalid: 0
+	printf("valid: %d\n", CheckParanthesis(valid)); // valid: 1
+	printf("invalid: %d\n", CheckParanthesis(invalid)); // invalid: 0
 
 
 	return 0;
