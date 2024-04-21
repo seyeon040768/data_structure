@@ -5,38 +5,38 @@
 typedef struct Node
 {
 	int data;
-	struct Node* link;
+	struct Node* lLink;
+	struct Node* rLink;
 } Node;
 
 typedef struct
 {
 	Node* head;
 	int length;
-} SinglyLinkedList;
+} DoublyLinkedList;
 
-int IsEmpty(const SinglyLinkedList* list)
+int IsEmpty(const DoublyLinkedList* list)
 {
 	return list->head == NULL;
 }
 
-Node* GetNode(const SinglyLinkedList* list, const int pos)
+Node* GetNode(const DoublyLinkedList* list, const int pos)
 {
-	if (pos < 0 || pos >= list->length)
+	if (pos < 0 || pos >= list->length || IsEmpty(list))
 	{
 		return NULL;
 	}
 
 	Node* search = list->head;
-
 	for (int i = 0; i < pos; ++i)
 	{
-		search = search->link;
+		search = search->rLink;
 	}
 
 	return search;
 }
 
-int Insert(SinglyLinkedList* list, const int pos, const int data)
+int Insert(DoublyLinkedList* list, const int pos, const int data)
 {
 	Node* newNode = (Node*)malloc(sizeof(Node));
 	if (newNode == NULL)
@@ -47,7 +47,11 @@ int Insert(SinglyLinkedList* list, const int pos, const int data)
 
 	if (pos == 0)
 	{
-		newNode->link = list->head;
+		newNode->rLink = list->head;
+		if (list->head != NULL)
+		{
+			list->head->lLink = newNode;
+		}
 		list->head = newNode;
 
 		++(list->length);
@@ -61,19 +65,28 @@ int Insert(SinglyLinkedList* list, const int pos, const int data)
 		return 0;
 	}
 
-	newNode->link = prev->link;
-	prev->link = newNode;
-	
+	if (prev->rLink != NULL)
+	{
+		prev->rLink->lLink = newNode;
+	}
+	newNode->rLink = prev->rLink;
+	newNode->lLink = prev;
+	prev->rLink = newNode;
+
 	++(list->length);
 	return 1;
 }
 
-void Delete(SinglyLinkedList* list, const int pos)
+void Delete(DoublyLinkedList* list, const int pos)
 {
 	if (pos == 0)
 	{
 		Node* current = list->head;
-		list->head = current->link;
+		list->head = current->rLink;
+		if (list->head != NULL)
+		{
+			list->head->lLink = NULL;
+		}
 		free(current);
 
 		--(list->length);
@@ -81,26 +94,27 @@ void Delete(SinglyLinkedList* list, const int pos)
 	}
 
 	Node* prev = GetNode(list, pos - 1);
-	if (prev == NULL || prev->link == NULL)
+	if (prev == NULL || prev->rLink == NULL)
 	{
 		return;
 	}
 
-	Node* current = prev->link;
-	prev->link = current->link;
+	Node* current = prev->rLink;
+	prev->rLink = current->rLink;
+	current->rLink->lLink = prev;
 	free(current);
 
 	--(list->length);
 }
 
-void Clear(SinglyLinkedList* list)
+void Clear(DoublyLinkedList* list)
 {
 	Node* search = list->head;
 	Node* temp;
 
 	while (search != NULL)
 	{
-		temp = search->link;
+		temp = search->rLink;
 		free(search);
 		search = temp;
 	}
@@ -109,44 +123,27 @@ void Clear(SinglyLinkedList* list)
 	list->length = 0;
 }
 
-int GetLength(const SinglyLinkedList* list)
+int GetLength(const DoublyLinkedList* list)
 {
 	return list->length;
 }
 
-void PrintList(const SinglyLinkedList* list)
+void PrintList(const DoublyLinkedList* list)
 {
 	Node* search = list->head;
 
 	while (search != NULL)
 	{
 		printf("%d ", search->data);
-
-		search = search->link;
+		search = search->rLink;
 	}
+
 	printf("\n");
-}
-
-void Reverse(SinglyLinkedList* list)
-{
-	Node* current = list->head;
-	Node* prev = NULL;
-	Node* next;
-
-	while (current != NULL)
-	{
-		next = current->link;
-		current->link = prev;
-		prev = current;
-		current = next;
-	}
-
-	list->head = prev;
 }
 
 int main(void)
 {
-	SinglyLinkedList list = { .head = NULL, .length = 0 };
+	DoublyLinkedList list = { .head = NULL, .length = 0 };
 
 	printf("%d\n", Insert(&list, 1, 10)); // 0
 
@@ -156,10 +153,8 @@ int main(void)
 	Insert(&list, 0, 4); // 4 1 2 3
 	Insert(&list, 1, 5); // 4 5 1 2 3
 
-	Reverse(&list); // 3 2 1 5 4
-
-	Delete(&list, 0); // 2 1 5 4
-	Delete(&list, 2); // 2 1 4
+	Delete(&list, 0); // 5 1 2 3
+	Delete(&list, 2); // 5 1 3
 
 	Clear(&list); // 
 

@@ -12,21 +12,21 @@ typedef struct
 {
 	Node* head;
 	int length;
-} SinglyLinkedList;
+} CircularLinkedList;
 
-int IsEmpty(const SinglyLinkedList* list)
+int IsEmpty(const CircularLinkedList* list)
 {
 	return list->head == NULL;
 }
 
-Node* GetNode(const SinglyLinkedList* list, const int pos)
+Node* GetNode(const CircularLinkedList* list, const int pos)
 {
-	if (pos < 0 || pos >= list->length)
+	if (pos < 0 || pos >= list->length || IsEmpty(list))
 	{
 		return NULL;
 	}
 
-	Node* search = list->head;
+	Node* search = list->head->link;
 
 	for (int i = 0; i < pos; ++i)
 	{
@@ -36,7 +36,7 @@ Node* GetNode(const SinglyLinkedList* list, const int pos)
 	return search;
 }
 
-int Insert(SinglyLinkedList* list, const int pos, const int data)
+int Insert(CircularLinkedList* list, const int pos, const int data)
 {
 	Node* newNode = (Node*)malloc(sizeof(Node));
 	if (newNode == NULL)
@@ -45,17 +45,27 @@ int Insert(SinglyLinkedList* list, const int pos, const int data)
 	}
 	newNode->data = data;
 
+	Node* prev = GetNode(list, pos - 1);
+
 	if (pos == 0)
 	{
-		newNode->link = list->head;
-		list->head = newNode;
+		if (IsEmpty(list))
+		{
+			newNode->link = newNode;
+			list->head = newNode;
 
-		++(list->length);
-		return 1;
+			++(list->length);
+			return 1;
+		}
+		
+		prev = list->head;
+	}
+	else if (pos == list->length)
+	{
+		list->head = newNode;
 	}
 
-	Node* prev;
-	if ((prev = GetNode(list, pos - 1)) == NULL)
+	if (prev == NULL)
 	{
 		free(newNode);
 		return 0;
@@ -63,24 +73,32 @@ int Insert(SinglyLinkedList* list, const int pos, const int data)
 
 	newNode->link = prev->link;
 	prev->link = newNode;
-	
+
 	++(list->length);
 	return 1;
 }
 
-void Delete(SinglyLinkedList* list, const int pos)
+void Delete(CircularLinkedList* list, const int pos)
 {
+	Node* prev = GetNode(list, pos - 1);
+
 	if (pos == 0)
 	{
-		Node* current = list->head;
-		list->head = current->link;
-		free(current);
+		if (list->length == 1)
+		{
+			free(list->head);
+			list->head = NULL;
 
-		--(list->length);
-		return;
+			--(list->length);
+			return;
+		}
+		prev = list->head;
+	}
+	else if (pos == list->length - 1)
+	{
+		list->head = prev;
 	}
 
-	Node* prev = GetNode(list, pos - 1);
 	if (prev == NULL || prev->link == NULL)
 	{
 		return;
@@ -93,60 +111,52 @@ void Delete(SinglyLinkedList* list, const int pos)
 	--(list->length);
 }
 
-void Clear(SinglyLinkedList* list)
+void Clear(CircularLinkedList* list)
 {
+	if (IsEmpty(list))
+	{
+		return;
+	}
+
 	Node* search = list->head;
 	Node* temp;
 
-	while (search != NULL)
+	do
 	{
 		temp = search->link;
 		free(search);
 		search = temp;
-	}
+	} while (search != list->head);
 
 	list->head = NULL;
 	list->length = 0;
 }
 
-int GetLength(const SinglyLinkedList* list)
+int GetLength(const CircularLinkedList* list)
 {
 	return list->length;
 }
 
-void PrintList(const SinglyLinkedList* list)
+void PrintList(const CircularLinkedList* list)
 {
+	if (IsEmpty(list))
+	{
+		return;
+	}
+
 	Node* search = list->head;
 
-	while (search != NULL)
+	do
 	{
-		printf("%d ", search->data);
-
 		search = search->link;
-	}
+		printf("%d ", search->data);
+	} while (search != list->head);
 	printf("\n");
-}
-
-void Reverse(SinglyLinkedList* list)
-{
-	Node* current = list->head;
-	Node* prev = NULL;
-	Node* next;
-
-	while (current != NULL)
-	{
-		next = current->link;
-		current->link = prev;
-		prev = current;
-		current = next;
-	}
-
-	list->head = prev;
 }
 
 int main(void)
 {
-	SinglyLinkedList list = { .head = NULL, .length = 0 };
+	CircularLinkedList list = { .head = NULL, .length = 0 };
 
 	printf("%d\n", Insert(&list, 1, 10)); // 0
 
@@ -156,10 +166,8 @@ int main(void)
 	Insert(&list, 0, 4); // 4 1 2 3
 	Insert(&list, 1, 5); // 4 5 1 2 3
 
-	Reverse(&list); // 3 2 1 5 4
-
-	Delete(&list, 0); // 2 1 5 4
-	Delete(&list, 2); // 2 1 4
+	Delete(&list, 0); // 5 1 2 3
+	Delete(&list, 2); // 5 1 3
 
 	Clear(&list); // 
 
