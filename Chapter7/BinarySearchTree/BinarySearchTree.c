@@ -106,8 +106,10 @@ TreeNode* Delete(TreeNode* node, int key)
 			rightMin = rightMin->left;
 		}
 
-		return leftMax; // or rightMin
+		node->data = rightMin->data;
+		node->right = Delete(node->right, rightMin->data);
 	}
+	return node;
 }
 
 int main(void)
